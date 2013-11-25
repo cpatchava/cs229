@@ -55,7 +55,7 @@ def plot(x,y,z):
 #FUNCTION: readData
         #:Reads in the training Data and arguments
 ###########################################
-def readData(train):
+def readData(train, plot_Bool):
     END = int(train) - 1
     k = 1
     with open('data.csv', 'rU') as csvfile:
@@ -80,7 +80,10 @@ def readData(train):
                 Y.append(long)
                 Z.append(random.randint(0,5))
             else: break
-    plot(X,Y,Z)
+        
+    #plot only if you have a flag from user to plot the data
+    if plot_Bool == True: plot(X,Y,Z)
+
 
 class Usage(Exception):
     def __init__(self, msg):
@@ -97,16 +100,24 @@ def main(argv=None):
         try:
             opts, args = getopt.getopt(argv[1:], "h", ["help"])
         except getopt.error, msg:
+            #plot only if you have a flag from user to plot the data
+            if len(argv) == 4:
+                if argv[3] == '-plot':
+                    plot_Flag = True
+                else:
+                    print '#####ERROR: Flag Option Does not exist. To Plot, run: python path.py -train NUM_TRAIN -plot'
+                    plot_Flag = False
+                    sys.exit()
+
             if len(argv) == 3 and argv[1] == '-train' and argv[2] != '':
                 print '...reading ', argv[2], ' training examples'
                 NUM = argv[2]
-                readData(NUM)
+                readData(NUM, plot_Flag)
             else:
                 print '...enter the number of train examples you desire to use e.g: python path.py -train 500'
                 print '...DEFAULT VALUE: 100 training examples'
                 NUM = 100
-                readData(NUM)
-                plot()
+                readData(NUM, plot_Flag)
             #raise Usage(msg)
     # more code, unchanged
     except Usage, err:
