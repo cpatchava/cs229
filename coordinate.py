@@ -1,4 +1,9 @@
 #!/usr/bin/python
 from pygeocoder import Geocoder
-results = Geocoder.geocode("10226 A Park Circle East Cupertino CA 95014")
+
+home = raw_input("Enter your starting address: ")
+end =  raw_input("Enter your end address: ")
+results = Geocoder.geocode(home)
+results2 = Geocoder.geocode(end)
 print(results[0].coordinates)
+print(results2[0].coordinates)
