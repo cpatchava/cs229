@@ -1,3 +1,9 @@
+#In order for this code to work you have to
+#run the command below
+#sudo pip install pygeocoder
+#
+#once you do this this code should work as expected.
+
 #!/usr/bin/python
 from pygeocoder import Geocoder
 
