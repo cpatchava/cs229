@@ -1,4 +1,10 @@
+##
+#Takes alameda county data and then strips all of the excess from it
+#Spits out the data into a file called clean_data.csv
+#
+##
 #!/usr/bin/perl
+
 open (MYFILE, 'Alameda_County_Sheriff_Crime_Reports.csv');
 $count=0;
 open (OUTPUT, '>clean_data.csv');
