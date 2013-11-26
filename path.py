@@ -138,6 +138,8 @@ def readData(train, plot_Bool):
                         MAP[content[2]] = [lat,long]
                         #time.sleep(.2) #so I don't get a timeout when I send too many requests to Google per second
             else: break
+
+    #Returns Houses and their Average Price, By ZIP CODE, which is a feature for Naive Bayes classifier later on
     HOUSES = read_Estate()
     print HOUSES
     #plot only if you have a flag from user to plot the data
