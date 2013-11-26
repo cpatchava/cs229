@@ -1,9 +1,11 @@
 import json
 from googlemaps import GoogleMaps
+from pygeocoder import Geocoder
 import csv
 import sys, copy
 import getopt
 import random
+import time
 
 #Plotting and Math Libraries/Tools
 from mpl_toolkits.mplot3d import Axes3D
@@ -73,16 +75,37 @@ def readData(train, plot_Bool):
                 content = list(row[i] for i in included_cols)
                 lat = float(content[2])
                 long = float(content[3])
-                print '[',content[2], ',',content[3] ,']'
+                #results = Geocoder.reverse_geocode(lat, long);
+                #print results[0]
+                #print '[',content[2], ',',content[3] ,']'
                 END = END - 1 ;
                 k = k+1
                 X.append(lat)
                 Y.append(long)
                 Z.append(random.randint(0,5))
+                #time.sleep(.2) #so I don't get a timeout when I send too many requests to Google per second
             else: break
         
     #plot only if you have a flag from user to plot the data
-    if plot_Bool == True: plot(X,Y,Z)
+    #if plot_Bool == True: plot(X,Y,Z)
+    find_Path()
+
+def find_Path():
+    gmaps = GoogleMaps()
+
+    home = raw_input("Enter your starting address: ")
+    end =  raw_input("Enter your end address: ")
+    results = Geocoder.geocode(home)
+    results2 = Geocoder.geocode(end)
+
+    dirs  = gmaps.directions(results, results2)
+
+    time  = dirs['Directions']['Duration']['seconds']
+    dist  = dirs['Directions']['Distance']['meters']
+    route = dirs['Directions']['Routes'][0]
+    for step in route['Steps']:
+        print step['Point']['coordinates'][1], step['Point']['coordinates'][0]
+        print step['descriptionHtml']
 
 
 class Usage(Exception):
