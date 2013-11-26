@@ -4,8 +4,9 @@ from pygeocoder import Geocoder
 import csv
 import sys, copy
 import getopt
-import random
+import numpy.random
 import time
+import subprocess #running perl on the fly
 
 #Plotting and Math Libraries/Tools
 from mpl_toolkits.mplot3d import Axes3D
@@ -15,11 +16,23 @@ from matplotlib import cm
 from matplotlib import pyplot as plt
 from matplotlib.mlab import griddata
 
-def plot2(X,Y,Z):
+def plot2(DATA, MAP, CLUSTER):
+
+    x = []
+    y = []
+    z = []
+    
+    for zip in CLUSTER:
+        #Get x,y coordinates from MAP
+        xy = MAP[zip]
+        x.append(xy[0])
+        y.append(xy[1])
+        z.append(CLUSTER[zip])
+
     fig = plt.figure()
     ax = fig.add_subplot(111,projection='3d')
 
-    ax.scatter(X,Y,Z, c ='r', marker = 'o')
+    ax.scatter(x,y,z, c ='r', marker = 'o')
 
     ax.set_xlabel('x axis')
     ax.set_ylabel('y axis')
@@ -31,26 +44,36 @@ def plot2(X,Y,Z):
 #FUNCTION: plot
         #:Plots the Crime Data on a meshgrid
 ################################################
-def plot(x,y,z):
+def plot(DATA, MAP, CLUSTER):
     fig = plt.figure()
     ax = fig.gca(projection='3d')
+    
+    x = []
+    y = []
+    z = []
+    
+    for zip in CLUSTER:
+        #Get x,y coordinates from MAP
+        xy = MAP[zip]
+        
+        x.append(xy[0])
+        y.append(xy[1])
+        z.append(CLUSTER[zip])
 
+    
     xi = np.linspace(min(x), max(x))
     yi = np.linspace(min(y), max(y))
 
     X, Y = np.meshgrid(xi, yi)
     Z = griddata(x, y, z, xi, yi)
 
-    surf = ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap=cm.jet,
-                           linewidth=0,antialiased=True)
-
+    surf = ax.plot_surface(X, Y, Z, rstride=3, cstride=3, cmap=cm.jet,linewidth=1,antialiased=True)
     ax.set_zlim3d(np.min(Z), np.max(Z))
     fig.colorbar(surf)
 
     ax.set_xlabel('Latitude')
     ax.set_ylabel('Longitude')
     ax.set_zlabel('Crime Stats')
-
     plt.show()
 
 ###########################################
@@ -58,37 +81,78 @@ def plot(x,y,z):
         #:Reads in the training Data and arguments
 ###########################################
 def readData(train, plot_Bool):
+    
+    #Automatically invoke the perl script to read in the data
+    param = 'world'
+    pipe = subprocess.Popen(["perl", "./cleanup.pl", param], stdout=subprocess.PIPE)
+    perl_result = pipe.stdout.read()
+
+    #print perl_result
+    
+    PLACES = dict()
+    CLUSTER = dict()
+    MAP = dict()
+    
     END = int(train) - 1
     k = 1
-    with open('data.csv', 'rU') as csvfile:
+    with open('clean_data.csv', 'rU') as csvfile:
         reader = csv.reader(csvfile)
         #Skips the column headers --eg. latitude, longitude, crime location etc
         reader.next()
+
         #The columns we want to include
-        included_cols = [0,1,5,6]
+        #included_cols = [0,1,5,6]
+        included_cols = [0,1,2,3]
         #Read through all the entries and obtain the required training data
+
         X = []
         Y = []
         Z = []
         for row in reader:
             if END >= 0:
                 content = list(row[i] for i in included_cols)
-                lat = float(content[2])
-                long = float(content[3])
-                #results = Geocoder.reverse_geocode(lat, long);
-                #print results[0]
-                #print '[',content[2], ',',content[3] ,']'
+                #print content
+                
+                #Obtain Latitude and Longitude
+                lat = float(content[0])  #float(content[2])
+                long = float(content[1]) #float(content[3])
+                
                 END = END - 1 ;
                 k = k+1
-                X.append(lat)
-                Y.append(long)
-                Z.append(random.randint(0,5))
-                #time.sleep(.2) #so I don't get a timeout when I send too many requests to Google per second
-            else: break
+                if(lat > 0 and lat < 180 and long > 0 and long < 180):
+                    key = (lat, long)
+                    if key in PLACES:
+                        PLACES[key] += 1
+                    else:
+                        PLACES[key] = 1
         
+                    if content[2] in CLUSTER:
+                        CLUSTER[content[2]] += 1;
+                        #Set point as average of points assigned to it only for purposes of plotting
+                        newpt = MAP[content[2]]
+                        newx = (newpt[0] + lat)/2
+                        newy = (newpt[1] + long)/2
+                        MAP[content[2]] = [newx,newy]
+                    else:
+                        CLUSTER[content[2]] = 1
+                        MAP[content[2]] = [lat,long]
+                        #time.sleep(.2) #so I don't get a timeout when I send too many requests to Google per second
+            else: break
+    HOUSES = read_Estate()
+    print HOUSES
     #plot only if you have a flag from user to plot the data
-    #if plot_Bool == True: plot(X,Y,Z)
-    find_Path()
+    if plot_Bool == True: plot2(PLACES, MAP, CLUSTER)
+    #find_Path()
+
+def read_Estate():
+    HOUSES = dict()
+    with open('houses.csv','rU') as f:
+        next(f) # skip headings
+        reader=csv.reader(f)
+        reader.next()
+        for row in reader:
+            HOUSES[row[0]] = float(row[2])
+    return HOUSES
 
 def find_Path():
     gmaps = GoogleMaps()
@@ -112,7 +176,6 @@ class Usage(Exception):
     def __init__(self, msg):
         self.msg = msg
 
-
 def main(argv=None):
     if argv is None:
         print '######ERROR#######'
@@ -131,16 +194,17 @@ def main(argv=None):
                     print '#####ERROR: Flag Option Does not exist. To Plot, run: python path.py -train NUM_TRAIN -plot'
                     plot_Flag = False
                     sys.exit()
-
             if len(argv) == 3 and argv[1] == '-train' and argv[2] != '':
                 print '...reading ', argv[2], ' training examples'
                 NUM = argv[2]
                 readData(NUM, plot_Flag)
-            else:
+            elif len(argv) == 2:
                 print '...enter the number of train examples you desire to use e.g: python path.py -train 500'
                 print '...DEFAULT VALUE: 100 training examples'
                 NUM = 100
                 readData(NUM, plot_Flag)
+            else:
+                readData(argv[2], plot_Flag)
             #raise Usage(msg)
     # more code, unchanged
     except Usage, err:
