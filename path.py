@@ -194,9 +194,6 @@ def readData(train, plot_Bool):
                         #time.sleep(.2) #so I don't get a timeout when I send too many requests to Google per second
             else: break
 
-    for elem in DATA:
-        print '******** ',elem
-    
     #Returns Houses and their Average Price, By ZIP CODE, which is a feature for Naive Bayes classifier later on
     HOUSES = read_Estate()
     #print HOUSES
@@ -221,14 +218,15 @@ def read_Estate():
 
 def find_Path(MAP, model):
     gmaps = GoogleMaps()
-    results = Geocoder.reverse_geocode(41.96786329,-87.71349889)
-    results2 = Geocoder.reverse_geocode(41.763258, -87.61172601)
+    
+    home = raw_input("Enter your starting address: ")
+    end =  raw_input("Enter your destination address: ")
+    results = Geocoder.geocode(home)
+    results2 = Geocoder.geocode(end)
+    #results = Geocoder.reverse_geocode(41.96786329,-87.71349889)
+    #results2 = Geocoder.reverse_geocode(41.763258, -87.61172601)
 
     print '---Finding Path from ', results, ' to ', results2
-#home = raw_input("Enter your starting address: ")
-#   end =  raw_input("Enter your end address: ")
-#results = Geocoder.geocode(home)
-#   results2 = Geocoder.geocode(end)
 
     dirs  = gmaps.directions(results, results2)
 
@@ -242,37 +240,42 @@ def find_Path(MAP, model):
     for step in route['Steps']:
         position = (step['Point']['coordinates'][1], step['Point']['coordinates'][0])
         if position in MAP:
-            for i in range(4): PATH.append('M')
+            for i in range(4): PATH.append('H')
             PATH.append('no')
         else:
             for i in range(4):PATH.append('L')
-            PATH.append('no')
+            PATH.append('yes')
         
-        print step['Point']['coordinates'][1], step['Point']['coordinates'][0]
-        print step['descriptionHtml']
-
         #PREDICT FOR EACH CITY IN THE INTERMEDIATE STEPS
         with open("predict.arff", "a") as myfile:
             for elem in PATH:
                 if elem == 'yes' or elem == 'no': myfile.write(elem)
                 else: myfile.write(elem  + ',')
             myfile.write('\n')
-            
-            val = model.TestClassifier("predict.arff")
-            
-            #UPDATE THE FILES
-            delete("predict.arff")
-            filename2 = "predict.arff"
-            shutil.copy("predict_start.arff", filename2)
-#if os.path.isfile (filename2): print "Successfully created a new file!! *****"
-            EVALUATION.append(val)
-            print '------------------------------Is it Safe? ', val
+        PATH = []
 
-    print '$$$$$$$$', EVALUATION
+    EVALUATION = model.TestClassifier("predict.arff")
+    #mark current place as SAFE since you're already at that location anyways
+    EVALUATION[0] = 'yes'
+    
+    #Print Final Results At this Point
+    k = 0
+    for step in route['Steps']:
+        position = (step['Point']['coordinates'][1], step['Point']['coordinates'][0])
+        print step['Point']['coordinates'][1], step['Point']['coordinates'][0] ,  '===========================>SAFE? ', EVALUATION[k]
+        print step['descriptionHtml']
+        k +=1
+    
+    #UPDATE THE FILES
+    delete("predict.arff")
+    filename2 = "predict.arff"
+    shutil.copy("predict_start.arff", filename2)
+    if os.path.isfile (filename2): print "Have a Safe Journey"
+    else: print "#####Problem Here: Error 99. Engineeer Will Fix the Bug ASAP"
 
 
 #####################################################################################
-                                #CLASS: NAIVE BAYES CLASSIFIER
+                            #CLASS: NAIVE BAYES CLASSIFIER
 #####################################################################################
 
 #               Features:
@@ -342,7 +345,7 @@ class Model:
     #Function TestClassifier: Runs the classifier on the testfile to see the accuracy
     ###########################
     def TestClassifier(self, arffFile):
-        
+        PREDICTION  = []
         #Find Prediction Accuracy using these variables
         tot = 0
         correct = 0
@@ -352,13 +355,15 @@ class Model:
         for line in file:
             if line[0] != '@':
                 vector = line.strip().lower().split(',')
-                print line, '^^^^^^',vector
+                print '************', vector
                 prediction = self.Classify(vector)
+                PREDICTION.append(prediction)
                 expected = vector[len(vector) - 1]
                 #print "classifier: " + prediction + " given " + expected
                 if prediction == expected: correct += 1
                 tot+=1
-        print 'Percentage Accuracy = ',(correct/tot) * 100, '% Accurate'
+        print 'Percentage Confidence = ',(correct/tot) * 100, '%'
+        return PREDICTION
 
 ###########################################
 #Function: predict()
@@ -367,11 +372,13 @@ class Model:
 #This file updates the files: Deletes the training data file and creates a fresh copy with the attributes
 def predict(DATA):
     model = Model("trainingFile.arff")
+    #print DATA
     model.GetValues(DATA) #this will be appended to output and then used for training (test.csv)
     model.TrainClassifier()
     find_Path(DATA, model)
-    model.TestClassifier("features.arff")
+    #EVALUATION = model.TestClassifier("predict.arff") #("features.arff")
     updateFiles(model)
+
 
 ###########################################
 #updateFiles

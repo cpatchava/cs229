@@ -5,7 +5,6 @@
 @ATTRIBUTE  street_crime{H, M, L}
 @ATTRIBUTE	Safe {yes, no}
 @DATA
-
 H,H,H,L,Yes
 H,M,M,H,No
 L,H,M,L,Yes
@@ -27,3 +26,7 @@ M,M,H,L,Yes
 M,L,M,L,Yes
 H,M,H,H,No
 L,H,H,L,Yes
+L,L,L,L,Yes
+H,H,H,H, No
+H,H,H,L, Yes
+L,L,L,H, No

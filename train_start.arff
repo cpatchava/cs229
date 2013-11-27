@@ -5,7 +5,6 @@
 @ATTRIBUTE  street_crime{H, M, L}
 @ATTRIBUTE	Safe {yes, no}
 @DATA
-
 L,H,H,L,Yes
 H,M,L,H,No
 L,H,M,L,Yes
@@ -34,3 +33,67 @@ L,M,L,M,No
 L,H,L,H,No
 H,M,M,M,Yes
 L,M,L,H,No
+H,M,H,H,No
+L,H,H,L,Yes
+L,L,L,L,Yes
+H,H,H,H, No
+H,H,H,L, Yes
+L,L,L,H, No
+L,L,L,H, No
+L,L,L,H, No
+L,L,L,H, No
+L,L,L,H, No
+L,L,L,L,yes
+L,L,L,L,yes
+L,L,L,L,yes
+L,L,L,L,yes
+L,L,L,L,yes
+L,L,L,L,yes
+L,L,L,L,yes
+L,L,L,L,yes
+L,L,L,L,yes
+L,L,L,L,yes
+L,L,L,L,yes
+L,L,L,L,yes
+L,L,L,L,yes
+L,L,L,L,yes
+L,L,L,L,yes
+L,L,L,L,yes
+L,L,L,L,yes
+L,L,L,L,yes
+L,L,L,L,yes
+L,L,L,L,yes
+H,H,H,H,no
+H,H,H,H,no
+H,H,H,H,no
+H,H,H,H,no
+H,H,H,H,no
+H,H,H,H,no
+H,H,H,H,no
+H,H,H,H,no
+H,H,H,H,no
+H,H,H,H,no
+H,H,H,H,no
+H,H,H,H,no
+H,H,H,H,no
+H,H,H,H,no
+H,H,H,H,no
+H,H,H,H,no
+H,H,H,H,no
+H,H,H,L,yes
+H,H,H,L,yes
+H,H,H,L,yes
+H,H,H,L,yes
+H,H,H,L,yes
+H,H,H,L,yes
+H,H,H,L,yes
+H,H,H,L,yes
+H,H,H,L,yes
+H,H,H,L,yes
+H,H,H,L,yes
+H,H,H,L,yes
+H,H,H,L,yes
+H,H,H,L,yes
+H,H,H,L,yes
+H,H,H,L,yes
+
