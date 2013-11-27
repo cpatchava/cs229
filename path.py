@@ -298,6 +298,7 @@ class Model:
     #Train CLASSIFIER : Trains the classifier, given some features and labels
     ##########################
     def TrainClassifier(self):
+        print 'Training........................'
         for fv in self.featureVectors:
             self.labelCounts[fv[len(fv)-1]] += 1    #udpate count of the label
             for counter in range(0, len(fv)-1):
@@ -306,11 +307,13 @@ class Model:
         for label in self.labelCounts:  #increase label counts (smoothing). remember that the last feature is actually the label
             for feature in self.featureNameList[:len(self.featureNameList)-1]:
                 self.labelCounts[label] += len(self.features[feature])
+        print 'Training Successful..............'
 
     ##########################
     #NAIVE BAYES CLASSIFIER : classifies the data
     ##########################
     def Classify(self, featureVector):
+        print 'Classifying.....................'
         probabilityPerLabel = {}
         for label in self.labelCounts:
             logProb = 0
@@ -318,12 +321,14 @@ class Model:
                 logProb += math.log(self.featureCounts[(label, self.featureNameList[featureVector.index(featureValue)], featureValue)]/self.labelCounts[label])
             probabilityPerLabel[label] = (self.labelCounts[label]/sum(self.labelCounts.values())) * math.exp(logProb)
         #print probabilityPerLabel
+        print 'Classification Complete........'
         return max(probabilityPerLabel, key = lambda classLabel: probabilityPerLabel[classLabel])
     
     ##########################
     #Function GetValues: Gets the features and values for training purposes
     ##########################
     def GetValues(self, DATA):
+        print 'Reading Data ......................'
         with open(self.trainingFile, "a") as myfile:
             for example in DATA:
                 for elem in example:
@@ -340,7 +345,8 @@ class Model:
                     self.featureNameList.append(line.strip().split()[1])
                     self.features[self.featureNameList[len(self.featureNameList) - 1]] = line[line.find('{')+1: line.find('}')].strip().split(',')
         file.close()
-    
+        print 'Data Input Successful..............'
+
     ###########################
     #Function TestClassifier: Runs the classifier on the testfile to see the accuracy
     ###########################
@@ -389,7 +395,8 @@ def updateFiles(model):
     delete(model.trainingFile)
     filename2 = model.trainingFile
     shutil.copy("train_start.arff", filename2)
-    if os.path.isfile (filename2): print "Successfully created a new file!! *****"
+    if os.path.isfile (filename2): print " ***** Program Exited with Success!! *****"
+
 
 #####################################################################################
                             # MAIN AND EXCEPTION HANDLERS
@@ -401,9 +408,6 @@ class Usage(Exception):
 
 def main(argv=None):
     if argv is None:
-        print '######ERROR#######'
-        print '...Enter the number of train examples you desire to use. To run 500 examples, type:'
-        print 'python path.py -train 500'
         argv = sys.argv
     try:
         try:
