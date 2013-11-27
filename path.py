@@ -1,3 +1,7 @@
+#for the Naive Bayes Classifier
+from __future__ import division
+import collections
+import math
 import json
 from googlemaps import GoogleMaps
 from pygeocoder import Geocoder
@@ -7,6 +11,8 @@ import getopt
 import numpy.random
 import time
 import subprocess #running perl on the fly
+import os #file deletion, copying etc
+import shutil
 
 #Plotting and Math Libraries/Tools
 from mpl_toolkits.mplot3d import Axes3D
@@ -16,8 +22,20 @@ from matplotlib import cm
 from matplotlib import pyplot as plt
 from matplotlib.mlab import griddata
 
-def plot2(DATA, MAP, CLUSTER):
 
+##########################
+#Function delete(Name_of_File) : Deletes a file from the system
+##########################
+def delete(file):
+    ## if file exists, delete it ##
+    if os.path.isfile(file):
+        os.remove(file)
+    else:    ## Show an error ##
+        print("Error: %s file not found" % file)
+
+#Alternate plotting function: Still Under Testing
+def plot2(DATA, MAP, CLUSTER):
+    
     x = []
     y = []
     z = []
@@ -78,14 +96,14 @@ def plot(DATA, MAP, CLUSTER):
 
 ###########################################
 #FUNCTION: readData
-        #:Reads in the training Data and arguments
+          #:Reads in the training Data and arguments
 ###########################################
 def readData(train, plot_Bool):
     
     #Automatically invoke the perl script to read in the data
-    param = 'world'
-    pipe = subprocess.Popen(["perl", "./cleanup.pl", param], stdout=subprocess.PIPE)
-    perl_result = pipe.stdout.read()
+    #param = 'world'
+    #pipe = subprocess.Popen(["perl", "./cleanup.pl", param], stdout=subprocess.PIPE)
+    #perl_result = pipe.stdout.read()
 
     #print perl_result
     
@@ -95,24 +113,61 @@ def readData(train, plot_Bool):
     
     END = int(train) - 1
     k = 1
-    with open('clean_data.csv', 'rU') as csvfile:
+    with open('test.csv', 'rU') as csvfile:
         reader = csv.reader(csvfile)
         #Skips the column headers --eg. latitude, longitude, crime location etc
         reader.next()
 
         #The columns we want to include
         #included_cols = [0,1,5,6]
-        included_cols = [0,1,2,3]
+        included_cols = [7,8,9,10,11,12] #[0,1,2,3]
         #Read through all the entries and obtain the required training data
 
         X = []
         Y = []
         Z = []
+        
+        DATA = []
+        
         for row in reader:
             if END >= 0:
-                content = list(row[i] for i in included_cols)
+                content = list(float(row[i]) for i in included_cols)
+                content.append(row[1])
+                content.append(row[13])
                 #print content
+                new_train = []
                 
+                #Unemployment Levels
+                unemployment = content[2]
+                if unemployment >= 2000: new_train.append('H')
+                elif(unemployment > 1300 and unemployment < 2000 ): new_train.append('M')
+                else: new_train.append('L')
+                
+                #Property Value
+                pvalue = content[3]
+                if pvalue >= 200000: new_train.append('H')
+                elif pvalue < 200000 and pvalue > 120000: new_train.append('M')
+                else: new_train.append('L')
+
+                #Education Levels
+                edu = content[4]
+                if edu >= 88: new_train.append('H')
+                elif edu < 88 and edu > 75 : new_train.append('M')
+                else: new_train.append('L')
+                
+                #Street Crime Levels
+                street = content[5]
+                if street == 1 and content[6] == 'ASSAULT': new_train.append('H')
+                elif street == 1 and content[6] != 'ASSAULT': new_train.append('M')
+                else: new_train.append('L')
+
+                #Append Label
+                if float(content[7]) == 0 : new_train.append('yes')
+                else: new_train.append('no')
+                
+                #Store the Data in a List of training examples, later to be added to a file
+                DATA.append(new_train)
+            
                 #Obtain Latitude and Longitude
                 lat = float(content[0])  #float(content[2])
                 long = float(content[1]) #float(content[3])
@@ -126,7 +181,7 @@ def readData(train, plot_Bool):
                     else:
                         PLACES[key] = 1
         
-                    if content[2] in CLUSTER:
+                    if content[2] in CLUSTER: #for ZIP code --adding points to that Zip Code
                         CLUSTER[content[2]] += 1;
                         #Set point as average of points assigned to it only for purposes of plotting
                         newpt = MAP[content[2]]
@@ -139,13 +194,21 @@ def readData(train, plot_Bool):
                         #time.sleep(.2) #so I don't get a timeout when I send too many requests to Google per second
             else: break
 
+    for elem in DATA:
+        print '******** ',elem
+    
     #Returns Houses and their Average Price, By ZIP CODE, which is a feature for Naive Bayes classifier later on
     HOUSES = read_Estate()
-    print HOUSES
+    #print HOUSES
     #plot only if you have a flag from user to plot the data
-    if plot_Bool == True: plot2(PLACES, MAP, CLUSTER)
+    #if plot_Bool == True: plot2(PLACES, MAP, CLUSTER)
+    predict(PLACES)
     #find_Path()
 
+
+##########################
+#Function: read_Estate(): Reads in the Real Estate Prices for various Zip Codes, Helps us to make good prediction when it comes to safety
+##########################
 def read_Estate():
     HOUSES = dict()
     with open('houses.csv','rU') as f:
@@ -156,23 +219,174 @@ def read_Estate():
             HOUSES[row[0]] = float(row[2])
     return HOUSES
 
-def find_Path():
+def find_Path(MAP, model):
     gmaps = GoogleMaps()
+    results = Geocoder.reverse_geocode(41.96786329,-87.71349889)
+    results2 = Geocoder.reverse_geocode(41.763258, -87.61172601)
 
-    home = raw_input("Enter your starting address: ")
-    end =  raw_input("Enter your end address: ")
-    results = Geocoder.geocode(home)
-    results2 = Geocoder.geocode(end)
+    print '---Finding Path from ', results, ' to ', results2
+#home = raw_input("Enter your starting address: ")
+#   end =  raw_input("Enter your end address: ")
+#results = Geocoder.geocode(home)
+#   results2 = Geocoder.geocode(end)
 
     dirs  = gmaps.directions(results, results2)
 
     time  = dirs['Directions']['Duration']['seconds']
     dist  = dirs['Directions']['Distance']['meters']
     route = dirs['Directions']['Routes'][0]
+    
+    PATH = []
+    EVALUATION = []
+    
     for step in route['Steps']:
+        position = (step['Point']['coordinates'][1], step['Point']['coordinates'][0])
+        if position in MAP:
+            for i in range(4): PATH.append('M')
+            PATH.append('no')
+        else:
+            for i in range(4):PATH.append('L')
+            PATH.append('no')
+        
         print step['Point']['coordinates'][1], step['Point']['coordinates'][0]
         print step['descriptionHtml']
 
+        #PREDICT FOR EACH CITY IN THE INTERMEDIATE STEPS
+        with open("predict.arff", "a") as myfile:
+            for elem in PATH:
+                if elem == 'yes' or elem == 'no': myfile.write(elem)
+                else: myfile.write(elem  + ',')
+            myfile.write('\n')
+            
+            val = model.TestClassifier("predict.arff")
+            
+            #UPDATE THE FILES
+            delete("predict.arff")
+            filename2 = "predict.arff"
+            shutil.copy("predict_start.arff", filename2)
+#if os.path.isfile (filename2): print "Successfully created a new file!! *****"
+            EVALUATION.append(val)
+            print '------------------------------Is it Safe? ', val
+
+    print '$$$$$$$$', EVALUATION
+
+
+#####################################################################################
+                                #CLASS: NAIVE BAYES CLASSIFIER
+#####################################################################################
+
+#               Features:
+#       ***********************
+#Real Estate Value   :HIGH, LOW, MEDIUM
+#Unemployment Level  :HIGH, LOW, MEDIUM
+#Street Crime Level  :HIGH, LOW, MEDIUM
+#Education Levels    :HIGH, LOW, MEDIUM
+
+class Model:
+    def __init__(self, arffFile):
+        self.trainingFile = arffFile
+        self.features = {}              #all feature names and their possible values (including the class label)
+        self.featureNameList = []       #this is to maintain the order of features as in the arff
+        self.featureCounts = collections.defaultdict(lambda: 1)#contains tuples of the form (label, feature_name, feature_value)
+        self.featureVectors = []         #contains all the values and the label as the last entry
+        self.labelCounts = collections.defaultdict(lambda: 0)   #these will be smoothed later
+    
+    ##########################
+    #Train CLASSIFIER : Trains the classifier, given some features and labels
+    ##########################
+    def TrainClassifier(self):
+        for fv in self.featureVectors:
+            self.labelCounts[fv[len(fv)-1]] += 1    #udpate count of the label
+            for counter in range(0, len(fv)-1):
+                self.featureCounts[(fv[len(fv)-1], self.featureNameList[counter], fv[counter])] += 1
+        
+        for label in self.labelCounts:  #increase label counts (smoothing). remember that the last feature is actually the label
+            for feature in self.featureNameList[:len(self.featureNameList)-1]:
+                self.labelCounts[label] += len(self.features[feature])
+
+    ##########################
+    #NAIVE BAYES CLASSIFIER : classifies the data
+    ##########################
+    def Classify(self, featureVector):
+        probabilityPerLabel = {}
+        for label in self.labelCounts:
+            logProb = 0
+            for featureValue in featureVector:
+                logProb += math.log(self.featureCounts[(label, self.featureNameList[featureVector.index(featureValue)], featureValue)]/self.labelCounts[label])
+            probabilityPerLabel[label] = (self.labelCounts[label]/sum(self.labelCounts.values())) * math.exp(logProb)
+        #print probabilityPerLabel
+        return max(probabilityPerLabel, key = lambda classLabel: probabilityPerLabel[classLabel])
+    
+    ##########################
+    #Function GetValues: Gets the features and values for training purposes
+    ##########################
+    def GetValues(self, DATA):
+        with open(self.trainingFile, "a") as myfile:
+            for example in DATA:
+                for elem in example:
+                    if elem == 'yes' or elem == 'no': myfile.write(elem)
+                    else: myfile.write(elem  + ',')
+                myfile.write('\n')
+        
+        file = open(self.trainingFile, 'r')
+        for line in file:
+            if line[0] != '@':  #start of actual data
+                self.featureVectors.append(line.strip().lower().split(','))
+            else:        #feature definitions
+                if line.strip().lower().find('@data') == -1 and (not line.lower().startswith('@relation')):
+                    self.featureNameList.append(line.strip().split()[1])
+                    self.features[self.featureNameList[len(self.featureNameList) - 1]] = line[line.find('{')+1: line.find('}')].strip().split(',')
+        file.close()
+    
+    ###########################
+    #Function TestClassifier: Runs the classifier on the testfile to see the accuracy
+    ###########################
+    def TestClassifier(self, arffFile):
+        
+        #Find Prediction Accuracy using these variables
+        tot = 0
+        correct = 0
+    
+        #Use the user input for prediction ie. these are the set of intermediate cities to destination
+        file = open(arffFile, 'r')
+        for line in file:
+            if line[0] != '@':
+                vector = line.strip().lower().split(',')
+                print line, '^^^^^^',vector
+                prediction = self.Classify(vector)
+                expected = vector[len(vector) - 1]
+                #print "classifier: " + prediction + " given " + expected
+                if prediction == expected: correct += 1
+                tot+=1
+        print 'Percentage Accuracy = ',(correct/tot) * 100, '% Accurate'
+
+###########################################
+#Function: predict()
+#Calls the Naive Bayes Classifier, Trains and Predicts Safety of Path Given  User Query
+###########################################
+#This file updates the files: Deletes the training data file and creates a fresh copy with the attributes
+def predict(DATA):
+    model = Model("trainingFile.arff")
+    model.GetValues(DATA) #this will be appended to output and then used for training (test.csv)
+    model.TrainClassifier()
+    find_Path(DATA, model)
+    model.TestClassifier("features.arff")
+    updateFiles(model)
+
+###########################################
+#updateFiles
+###########################################
+#This file updates the files: Deletes the training data file and creates a fresh copy with the attributes
+def updateFiles(model):
+    #create a new file for next run--delete the file with appended data, i.e. create fresh copy of training data-to be appended upon run
+    delete(model.trainingFile)
+    filename2 = model.trainingFile
+    shutil.copy("train_start.arff", filename2)
+    if os.path.isfile (filename2): print "Successfully created a new file!! *****"
+
+#####################################################################################
+                            # MAIN AND EXCEPTION HANDLERS
+#####################################################################################
 
 class Usage(Exception):
     def __init__(self, msg):

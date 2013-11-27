@@ -1,0 +1,29 @@
+@RELATION CRIME
+@ATTRIBUTE unemployment {H, M, L}
+@ATTRIBUTE property_value {H, M, L}
+@ATTRIBUTE education {H, M, L}
+@ATTRIBUTE  street_crime{H, M, L}
+@ATTRIBUTE	Safe {yes, no}
+@DATA
+
+H,H,H,L,Yes
+H,M,M,H,No
+L,H,M,L,Yes
+M,M,H,M,Yes
+M,L,M,L,Yes
+H,M,H,H,No
+H,H,H,L,Yes
+H,L,L,H,No
+M,H,L,M,Yes
+H,H,M,L,Yes
+H,M,L,H,No
+L,H,L,H,No
+M,M,M,L,Yes
+M,M,H,H,No
+L,H,H,L,Yes
+L,M,L,H,No
+H,L,M,L,Yes
+M,M,H,L,Yes
+M,L,M,L,Yes
+H,M,H,H,No
+L,H,H,L,Yes

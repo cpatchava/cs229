@@ -1,0 +1,9 @@
+@RELATION CRIME
+@ATTRIBUTE unemployment {H, M, L}
+@ATTRIBUTE property_value {H, M, L}
+@ATTRIBUTE education {H, M, L}
+@ATTRIBUTE  street_crime{H, M, L}
+@ATTRIBUTE	Safe {yes, no}
+@DATA
+
+
