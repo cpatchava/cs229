@@ -1,19 +1,20 @@
 #!/usr/bin/perl
+#system('new_program.pl');
 #opens file and cleans up into a new file
-open (MYFILE, 'Alameda_County_Sheriff_Crime_Reports.csv');
+open (MYFILE, 'Undisturbing_data.csv');
 $count=0;
 open (OUTPUT, '>clean_data.csv');
-print OUTPUT "Latitude, Longitude, Zip Code, City, Description \n";
+print OUTPUT "Latitude, Longitude, Zip Code, City, Description, count \n";
 while (<MYFILE>) {
 	chomp;
 	my @values = split(',', $_);
 	#print "$values[9], $values[10], $values[4], $values[2],$values[6]\n";
-	if($count>=1){
-	$values[9] =~ s/[^0-9.]//g;
-	$values[10] =~ s/[^0-9.]//g;
-	$values[9]= sprintf("%.3f", $values[9] );
-	$values[10]=sprintf("%.3f", $values[10]);
-	print OUTPUT "$values[9], $values[10], $values[4], $values[2] \n";
+	if($count>=0){
+	$values[8] =~ s/[^0-9.-]//g;
+	$values[9] =~ s/[^0-9.-]//g;
+	$values[8]= sprintf("%.3f", $values[8] );
+	$values[9]=sprintf("%.3f", $values[9]);
+	print OUTPUT "$values[8], $values[9], $values[4], $values[2], $values[10], 1 \n";
  	#print "$_\n";
 	}
 	$count++;
@@ -24,23 +25,27 @@ close(OUTPUT);
 open (MYFILE, 'clean_data.csv');
 $count = 0;
 $inner = 0;
+open (CROPPED, '>data_crop.csv');
 while(<MYFILE>){
 	chomp;
 	@lines[$count] = "$_\n";
-#	while($inner<=$count){
-#		my @glob = split(',', $lines[$count]);
-#		my @curr = split(',', $lines[$inner]);
-#		$inner++;
-#	}
-#	$inner=0;
+	#my @lines = split(',', $_);
+	while($inner<=$count){
+		my @glob = split(',', $lines[$count]);
+		my @curr = split(',', $lines[$inner]);
+		$inner++;
+		for($i=0; $i < 7; $i++){
+
+			if($glob[0] eq $curr[0]){
+			print CROPPED "$glob[$i],";	
+			}
+		
+		}
+	}
+	$inner=0;
 	print "$lines[$count]";
 
 	$count++;
 }
-@lines = sort { # Compare second fields
-    (split',' , $a)[1]
-    cmp
-    (split " ", $b)[1]
-} @lines;
 close(MYFILE);
-
+close(CROPPED);
