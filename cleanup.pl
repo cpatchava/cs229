@@ -138,8 +138,22 @@ while($c <= $curr_max){
 			if($line[2] eq $zip_line[0]){
 				$finale = int(rand(2));
 				$line[5] =~ s/[^0-9.-]//g;
-				$zip_line[2] =~ s/[^0-9.-]//g;
-				@final_total[$c]="BLANK,BLANK,$line[3],Outside,$line[3],True,False,$line[5],$line[0],$line[1],$zip_line[2],$zip_line[1],$zip_line[2],$finale,$finale \n";
+				$zip_line[3] =~ s/[^0-9.-]//g;
+				$f = int(rand(2));
+				$e = int(rand(2));
+				if($f eq '1'){
+					$sense = 'FALSE';
+				}
+				else{
+					$sense = 'TRUE';
+				}
+				if($e eq '1'){
+					$lol = 'FALSE';
+				}
+				else{
+					$lol = 'TRUE';
+				}
+				@final_total[$c]="BLANK,BLANK,$line[3],Outside,$line[3],$sense,$lol,$line[5],$line[0],$line[1],$zip_line[2],$zip_line[1],$zip_line[3],$finale,$finale \n";
 				break;
 			}	
 		}
